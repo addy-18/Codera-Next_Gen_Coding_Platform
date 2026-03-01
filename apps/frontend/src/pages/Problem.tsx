@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import type { Problem as ProblemType, TestResultEvent, FinalVerdictEvent, StatusUpdateEvent } from '../types';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { Play, Send, Loader2, Terminal, ChevronLeft } from 'lucide-react';
-import { clsx } from 'clsx';
+import clsx from 'clsx';
 
 const LANGUAGES = [
     { id: 71, name: 'Python', monaco: 'python' },
@@ -105,7 +105,6 @@ export function Problem() {
             const submissionId = res.data.id;
             
             if (isConnected) {
-                sendMessage({ type: 'auth', userId: 'user-guest' });
                 sendMessage({ type: 'subscribe_submission', submissionId });
             } else {
                 setOutput(prev => [...prev, 'Warning: WebSocket not connected. Check console.']);

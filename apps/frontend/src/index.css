@@ -1,14 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
-  --color-primary: #3b82f6;
-  --color-primary-foreground: #ffffff;
-  /* Add more theme variables for glassmorphism later if needed */
+  /* Midnight Plum Pattern (Dark mode adaptation) */
+  --color-base: #0f0a18;
+  --color-surface: #1b1030;
+  --color-elevated: #2a1c47;
+  --color-primary: #5b3e7a;
+  --color-primary-hover: #724f98;
+  --color-accent: #ffd166;
+  --color-accent-hover: #ffda85;
+  --color-danger: #e24a6a;
+  --color-success: #3bb77e;
+  --color-muted: #d5c7e3;
+  --color-text-main: #ffffff;
+  --color-text-secondary: #e0d4ec;
+  --color-border: rgba(154, 134, 168, 0.25);
+  
+  --radius-card: 12px;
+  --radius-button: 6px;
+
+  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 16px rgba(91, 62, 122, 0.4);
 }
 
-/* Base styles for full height */
+/* Base styles */
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -17,7 +32,23 @@ html, body, #root {
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+  background-color: var(--color-base);
+  color: var(--color-text-main);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar for a sleek look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-elevated);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
 }

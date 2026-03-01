@@ -3,7 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import config from '@codera/config';
 import prisma from '@codera/db';
-import type { SubmissionJobPayload } from '@codera/types';
+import type { SubmissionJobPayload, Verdict } from '@codera/types';
+import { mapJudge0StatusToVerdict, JUDGE0_STATUS } from '@codera/types';
 import { judge0Client } from './judge0';
 import { aggregator } from './aggregator';
 import { publishSubmissionEvent } from './publisher';
@@ -21,14 +22,19 @@ function parseRedisUrl(url: string) {
 
 const connection = parseRedisUrl(config.redisUrl);
 
+// Polling constants
+const POLL_INTERVAL_MS = 1500;   // Check every 1.5 seconds
+const MAX_POLL_ATTEMPTS = 120;   // Give up after ~3 minutes
+
 /**
  * Start the BullMQ worker consuming from `submission-queue`.
  *
  * For each job:
  * 1. Load submission from DB
  * 2. Discover testcases on local FS
- * 3. Submit each testcase independently to Judge0 with callback
- * 4. Update submission status to 'running'
+ * 3. Submit each testcase independently to Judge0
+ * 4. Poll Judge0 for results until all testcases are finished
+ * 5. Persist results, publish events, compute final verdict
  */
 // Map Judge0 language IDs to full-boilerplate file extensions
 const LANG_EXT_MAP: Record<number, string> = {
@@ -41,6 +47,11 @@ const LANG_EXT_MAP: Record<number, string> = {
 
 /** Number of testcases to run in 'run' mode (Run Code button) */
 const RUN_MODE_LIMIT = 3;
+
+/** Small helper to sleep for ms */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export function startWorker(): void {
   const worker = new Worker<SubmissionJobPayload>(
@@ -60,7 +71,6 @@ export function startWorker(): void {
         }
 
         // 2. Locate problem on local FS
-        // Resolve from monorepo root (3 levels up from this file: src -> coordinator -> apps -> Backend)
         const basePath = config.problemsBasePath.startsWith('.')
           ? path.resolve(__dirname, '..', '..', '..', 'problems')
           : config.problemsBasePath;
@@ -110,9 +120,11 @@ export function startWorker(): void {
           status: 'running',
         });
 
-        // 7. Submit each testcase independently to Judge0
+        // 7. Submit each testcase to Judge0 and collect tokens
+        const tokenMap: { token: string; testcaseIndex: number }[] = [];
+
         for (const tc of testcases) {
-          await judge0Client.submitTestcase({
+          const result = await judge0Client.submitTestcase({
             sourceCode: finalSource,
             languageId: submission.languageId,
             stdin: tc.input,
@@ -120,11 +132,156 @@ export function startWorker(): void {
             submissionId,
             testcaseIndex: tc.index,
           });
+          tokenMap.push({ token: result.token, testcaseIndex: tc.index });
         }
 
         console.log(
-          `[Worker] All ${testcases.length} testcases submitted to Judge0 for ${submissionId}`
+          `[Worker] All ${testcases.length} testcases submitted to Judge0 for ${submissionId}. Starting polling...`
         );
+
+        // 8. Poll Judge0 for results
+        const pending = new Set(tokenMap.map((t) => t.token));
+        let attempts = 0;
+        let finalized = false;
+
+        while (pending.size > 0 && attempts < MAX_POLL_ATTEMPTS && !finalized) {
+          await sleep(POLL_INTERVAL_MS);
+          attempts++;
+
+          for (const entry of tokenMap) {
+            if (!pending.has(entry.token)) continue;
+
+            try {
+              const result = await judge0Client.getResult(entry.token);
+              const statusId = result.status?.id;
+
+              // Still processing — skip
+              if (statusId !== undefined && statusId < JUDGE0_STATUS.ACCEPTED) {
+                continue;
+              }
+
+              // Finished — process this testcase result
+              pending.delete(entry.token);
+
+              const verdict: Verdict = statusId
+                ? mapJudge0StatusToVerdict(statusId)
+                : 'INTERNAL_ERROR';
+
+              console.log(
+                `[Worker] Poll result for ${submissionId} testcase ${entry.testcaseIndex}: ${verdict} (status=${statusId})`
+              );
+
+              // Persist result in DB
+              await prisma.submissionResult.upsert({
+                where: {
+                  submissionId_testcaseIndex: {
+                    submissionId,
+                    testcaseIndex: entry.testcaseIndex,
+                  },
+                },
+                update: {
+                  status: verdict,
+                  time: result.time ?? null,
+                  memory: result.memory ? String(result.memory) : null,
+                  stdout: result.stdout?.substring(0, 500) ?? null,
+                  stderr: (result.stderr || result.compile_output)?.substring(0, 500) ?? null,
+                },
+                create: {
+                  submissionId,
+                  testcaseIndex: entry.testcaseIndex,
+                  status: verdict,
+                  time: result.time ?? null,
+                  memory: result.memory ? String(result.memory) : null,
+                  stdout: result.stdout?.substring(0, 500) ?? null,
+                  stderr: (result.stderr || result.compile_output)?.substring(0, 500) ?? null,
+                },
+              });
+
+              // Publish per-test event live
+              await publishSubmissionEvent(submissionId, {
+                type: 'test_result',
+                submissionId,
+                testcaseIndex: entry.testcaseIndex,
+                verdict,
+                time: result.time,
+                memory: result.memory ? String(result.memory) : null,
+              });
+
+              // Update in-memory aggregation
+              const isLast = aggregator.recordResult(submissionId, {
+                testcaseIndex: entry.testcaseIndex,
+                status: verdict,
+                verdict,
+                time: result.time,
+                memory: result.memory ? String(result.memory) : null,
+              });
+
+              // If last testcase → compute final verdict and stop polling
+              if (isLast) {
+                const final_ = aggregator.computeFinalVerdict(submissionId);
+
+                await prisma.submission.update({
+                  where: { id: submissionId },
+                  data: {
+                    status: 'finished',
+                    verdict: final_.verdict,
+                    passedTests: final_.passedTests,
+                    totalTests: final_.totalTests,
+                  },
+                });
+
+                await publishSubmissionEvent(submissionId, {
+                  type: 'final_verdict',
+                  submissionId,
+                  verdict: final_.verdict,
+                  passedTests: final_.passedTests,
+                  totalTests: final_.totalTests,
+                  results: final_.results.map((r) => ({
+                    testcaseIndex: r.testcaseIndex,
+                    status: r.status,
+                    time: r.time,
+                    memory: r.memory,
+                  })),
+                });
+
+                console.log(
+                  `[Worker] FINAL VERDICT for ${submissionId}: ${final_.verdict} (${final_.passedTests}/${final_.totalTests})`
+                );
+
+                finalized = true;
+                break; // Stop iterating remaining tokens — all done
+              }
+            } catch (pollErr: any) {
+              console.error(
+                `[Worker] Poll error for token ${entry.token}:`,
+                pollErr.message
+              );
+              // Continue polling other tokens
+            }
+          }
+        }
+
+        // If we ran out of attempts, fail remaining testcases
+        if (pending.size > 0) {
+          console.error(
+            `[Worker] Timed out waiting for ${pending.size} testcases for ${submissionId}`
+          );
+
+          // Mark submission as finished with error
+          await prisma.submission.update({
+            where: { id: submissionId },
+            data: { status: 'finished', verdict: 'INTERNAL_ERROR' },
+          });
+
+          await publishSubmissionEvent(submissionId, {
+            type: 'final_verdict',
+            submissionId,
+            verdict: 'INTERNAL_ERROR',
+            passedTests: 0,
+            totalTests: testcases.length,
+            results: [],
+          });
+        }
       } catch (err) {
         console.error(`[Worker] Failed to process submission ${submissionId}:`, err);
 

@@ -1,17 +1,25 @@
 import { WebSocket, WebSocketServer, RawData } from 'ws';
-import { Server } from 'http';
 import Redis from 'ioredis';
 import config from '@codera/config';
-import type { WSClientMessage, SubmissionEvent } from '@codera/types';
+import type { WSClientMessage, SubmissionEvent, RoomEvent } from '@codera/types';
 
 interface AuthenticatedWebSocket extends WebSocket {
   userId?: string;
   isAlive?: boolean;
   subscribedSubmissions?: Set<string>;
+  roomId?: string; // Room the user is currently in
 }
 
 // userId → WebSocket
 const userConnections = new Map<string, AuthenticatedWebSocket>();
+
+export function getActiveConnections() {
+  return Array.from(userConnections.entries()).map(([uId, ws]) => ({
+    userId: uId,
+    roomId: ws.roomId,
+    readyState: ws.readyState,
+  }));
+}
 
 // submissionId → Set of subscriber Redis channels
 const activeSubscriptions = new Set<string>();
@@ -45,11 +53,11 @@ function getPublisher(): Redis {
 }
 
 /**
- * Setup native WebSocket server on the HTTP server.
+ * Setup native WebSocket server (noServer mode — upgrades routed from server.ts).
  */
-export function setupWebSocket(server: Server): WebSocketServer {
-  const wss = new WebSocketServer({ server, path: '/ws' });
-  console.log('[WebSocket] Server initialized on path /ws');
+export function setupWebSocket(): WebSocketServer {
+  const wss = new WebSocketServer({ noServer: true });
+  console.log('[WebSocket] Server initialized (noServer mode, path /ws)');
 
   // Initialize Redis subscriber
   getSubscriber();
@@ -114,6 +122,54 @@ function handleMessage(ws: AuthenticatedWebSocket, data: RawData): void {
         handleSubscribeSubmission(ws, message.submissionId);
         break;
 
+      case 'join_room':
+        handleJoinRoom(ws, message.roomId);
+        break;
+
+      case 'leave_room':
+        handleLeaveRoom(ws, message.roomId);
+        break;
+
+      case 'cursor_update':
+        // Broadcast cursor position to other users in the same room
+        if (ws.userId && ws.roomId) {
+          userConnections.forEach((otherWs) => {
+            if (
+              otherWs !== ws &&
+              otherWs.readyState === WebSocket.OPEN &&
+              otherWs.roomId === ws.roomId
+            ) {
+              send(otherWs, {
+                type: 'cursor_update',
+                userId: ws.userId,
+                username: message.username,
+                position: message.position,
+                color: message.color,
+              });
+            }
+          });
+        }
+        break;
+
+      case 'language_change':
+        // Broadcast language change to other users
+        if (ws.userId && ws.roomId) {
+          userConnections.forEach((otherWs) => {
+            if (
+              otherWs !== ws &&
+              otherWs.readyState === WebSocket.OPEN &&
+              otherWs.roomId === ws.roomId
+            ) {
+              send(otherWs, {
+                type: 'language_change',
+                userId: ws.userId,
+                languageId: message.languageId,
+              });
+            }
+          });
+        }
+        break;
+
       case 'ping':
         send(ws, { type: 'pong', timestamp: Date.now() });
         break;
@@ -144,6 +200,26 @@ function handleAuth(ws: AuthenticatedWebSocket, userId: string): void {
 
   console.log(`[WebSocket] User ${userId} authenticated`);
   send(ws, { type: 'auth_success', userId, serverId: config.serverId });
+}
+
+// ── Room join/leave ──
+function handleJoinRoom(ws: AuthenticatedWebSocket, roomId: string): void {
+  if (!ws.userId) {
+    send(ws, { type: 'error', message: 'Authenticate first' });
+    return;
+  }
+
+  ws.roomId = roomId;
+  console.log(`[WebSocket] User ${ws.userId} joined room ${roomId}`);
+  send(ws, { type: 'room_joined', roomId });
+}
+
+function handleLeaveRoom(ws: AuthenticatedWebSocket, roomId: string): void {
+  if (ws.roomId === roomId) {
+    ws.roomId = undefined;
+    console.log(`[WebSocket] User ${ws.userId} left room ${roomId}`);
+    send(ws, { type: 'room_left', roomId });
+  }
 }
 
 // ── Subscribe to submission updates via Redis Pub/Sub ──
@@ -195,6 +271,22 @@ function handleRedisMessage(channel: string, message: string): void {
   }
 }
 
+// ── Room Broadcasting ──
+/**
+ * Broadcast an event to all connected users in a room.
+ * This is called from roomService for room-scoped events.
+ */
+export function broadcastToRoom(roomId: string, event: RoomEvent | object): void {
+  let sent = 0;
+  userConnections.forEach((ws) => {
+    if (ws.readyState === WebSocket.OPEN && ws.roomId === roomId) {
+      send(ws, event);
+      sent++;
+    }
+  });
+  console.log(`[WebSocket] Broadcast to room ${roomId}: ${(event as any).type} (${sent} clients)`);
+}
+
 // ── Disconnect ──
 function handleDisconnect(ws: AuthenticatedWebSocket): void {
   if (ws.userId) {
@@ -202,7 +294,7 @@ function handleDisconnect(ws: AuthenticatedWebSocket): void {
     userConnections.delete(ws.userId);
   }
 
-  // Clean up subscriptions that have no listeners
+  // Clean up submission subscriptions that have no listeners
   if (ws.subscribedSubmissions) {
     for (const subId of ws.subscribedSubmissions) {
       const channel = `submission:${subId}`;

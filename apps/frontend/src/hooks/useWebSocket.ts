@@ -18,6 +18,8 @@ export function useWebSocket() {
     socket.onopen = () => {
       console.log('WS Connected');
       setIsConnected(true);
+      // Authenticate immediately on connect
+      socket.send(JSON.stringify({ type: 'auth', userId: 'user-guest' }));
     };
 
     socket.onclose = () => {

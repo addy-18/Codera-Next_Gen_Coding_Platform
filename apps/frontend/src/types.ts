@@ -50,3 +50,30 @@ export interface StatusUpdateEvent {
   submissionId: string;
   status: SubmissionStatus;
 }
+
+// ─── Auth Types ───
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  problemsSolved: string[];
+}
+
+// ─── Room Types ───
+export type RoomRole = 'host' | 'collaborator';
+
+export interface RoomParticipant {
+  userId: string;
+  username: string;
+  role: RoomRole;
+  canEdit: boolean;
+}
+
+export interface RoomData {
+  id: string;
+  problemId: string;
+  hostId: string;
+  participants: RoomParticipant[];
+  mode: string;
+  isActive: boolean;
+}

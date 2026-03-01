@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import { submissionRouter, problemRouter } from './routes'
+import { submissionRouter, problemRouter, authRouter, roomRouter } from './routes';
 import { errorHandler } from './middleware/errorHandler';
+import { requireAuth } from './middleware/auth';
 import config from '@codera/config';
 
 const app = express();
@@ -19,6 +20,8 @@ if (config.nodeEnv === 'development') {
   });
 }
 
+import { getActiveConnections } from './utils/websocket';
+
 // ── Health Check ──
 app.get('/health', (_req, res) => {
   res.json({
@@ -28,9 +31,15 @@ app.get('/health', (_req, res) => {
   });
 });
 
+app.get('/debug/ws', (_req, res) => {
+  res.json(getActiveConnections());
+});
+
 // ── Routes ──
 app.use('/submissions', submissionRouter);
 app.use('/problems', problemRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/rooms', requireAuth, roomRouter);
 
 // ── 404 ──
 app.use((_req, res) => {

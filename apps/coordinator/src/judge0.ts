@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import config from '@codera/config';
-import type { Judge0SubmissionPayload, Judge0SubmissionResponse } from '@codera/types';
+import type { Judge0SubmissionPayload, Judge0SubmissionResponse, Judge0CallbackBody } from '@codera/types';
 
 class Judge0Client {
   private client: AxiosInstance;
@@ -14,7 +14,7 @@ class Judge0Client {
   }
 
   /**
-   * Submit a single testcase to Judge0 with a callback URL.
+   * Submit a single testcase to Judge0 (no callback — we poll instead).
    * Each testcase = one independent execution.
    */
   async submitTestcase(payload: {
@@ -25,14 +25,11 @@ class Judge0Client {
     submissionId: string;
     testcaseIndex: number;
   }): Promise<Judge0SubmissionResponse> {
-    const callbackUrl = `${config.coordinatorCallbackUrl}/${payload.submissionId}/${payload.testcaseIndex}`;
-
-    const body: Judge0SubmissionPayload & { callback_url: string } = {
+    const body: Judge0SubmissionPayload = {
       source_code: payload.sourceCode,
       language_id: payload.languageId,
       stdin: payload.stdin,
       expected_output: payload.expectedOutput,
-      callback_url: callbackUrl,
     };
 
     const response = await this.client.post<Judge0SubmissionResponse>(
@@ -44,6 +41,17 @@ class Judge0Client {
       `[Judge0] Submitted testcase ${payload.testcaseIndex} for ${payload.submissionId}, token: ${response.data.token}`
     );
 
+    return response.data;
+  }
+
+  /**
+   * Poll Judge0 for a submission result by token.
+   * Returns the full result body (same shape as the callback body).
+   */
+  async getResult(token: string): Promise<Judge0CallbackBody> {
+    const response = await this.client.get<Judge0CallbackBody>(
+      `/submissions/${token}?base64_encoded=false&fields=token,stdout,stderr,compile_output,message,exit_code,time,memory,status`
+    );
     return response.data;
   }
 

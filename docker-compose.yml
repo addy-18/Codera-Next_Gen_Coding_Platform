@@ -33,6 +33,21 @@ services:
       retries: 5
     restart: unless-stopped
 
+  codera-mongo:
+    image: mongo:7
+    container_name: codera-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - codera-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   codera-db-data:
   codera-redis-data:
+  codera-mongo-data:

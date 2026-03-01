@@ -25,6 +25,13 @@ export const config = {
 
   // Problems
   problemsBasePath: process.env.PROBLEMS_BASE_PATH || path.resolve(__dirname, '..', '..', '..', 'problems'),
+
+  // MongoDB (ShareDB)
+  mongodbUrl: process.env.MONGODB_URL || 'mongodb://localhost:27018/codera_collab',
+
+  // JWT
+  jwtSecret: process.env.JWT_SECRET || 'codera-dev-secret-change-in-production',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
 } as const;
 
 export type Config = typeof config;

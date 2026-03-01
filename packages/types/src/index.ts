@@ -139,4 +139,116 @@ export interface WSPingMessage {
   type: 'ping';
 }
 
-export type WSClientMessage = WSAuthMessage | WSSubscribeMessage | WSPingMessage;
+export interface WSCursorUpdateMessage {
+  type: 'cursor_update';
+  username: string;
+  position: { lineNumber: number; column: number };
+  color: string;
+}
+
+export interface WSLanguageChangeMessage {
+  type: 'language_change';
+  languageId: number;
+}
+
+export type WSClientMessage = WSAuthMessage | WSSubscribeMessage | WSPingMessage | WSJoinRoomMessage | WSLeaveRoomMessage | WSCursorUpdateMessage | WSLanguageChangeMessage;
+
+// ─── Auth Types ───
+export interface AuthPayload {
+  userId: string;
+  iat?: number;
+  exp?: number;
+}
+
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    problemsSolved: string[];
+  };
+}
+
+// ─── Room / Collaboration Types ───
+export type RoomRole = 'host' | 'collaborator';
+export type RoomMode = 'interview' | 'practice';
+
+export interface RoomParticipant {
+  userId: string;
+  username: string;
+  role: RoomRole;
+  canEdit: boolean;
+}
+
+// ─── Room WebSocket Events ───
+export interface WSJoinRoomMessage {
+  type: 'join_room';
+  roomId: string;
+}
+
+export interface WSLeaveRoomMessage {
+  type: 'leave_room';
+  roomId: string;
+}
+
+export interface PermissionUpdateEvent {
+  type: 'permission_update';
+  targetUserId: string;
+  canEdit: boolean;
+}
+
+export interface RunResultEvent {
+  type: 'run_result';
+  executedBy: string;
+  submissionId: string;
+  output: string;
+  status: string;
+  runtime: string;
+}
+
+export interface SubmitResultEvent {
+  type: 'submit_result';
+  submittedBy: string;
+  submissionId: string;
+  verdict: string;
+  runtime: string;
+  memory: string;
+}
+
+export interface UserJoinedEvent {
+  type: 'user_joined';
+  userId: string;
+  username: string;
+}
+
+export interface UserLeftEvent {
+  type: 'user_left';
+  userId: string;
+  username: string;
+}
+
+export interface PresenceUpdateEvent {
+  type: 'presence_update';
+  participants: RoomParticipant[];
+}
+
+export type RoomEvent =
+  | PermissionUpdateEvent
+  | RunResultEvent
+  | SubmitResultEvent
+  | UserJoinedEvent
+  | UserLeftEvent
+  | PresenceUpdateEvent;
+
