@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { submissionRouter, problemRouter, authRouter, roomRouter } from './routes';
+import { submissionRouter, problemRouter, authRouter, roomRouter, snippetRouter, aiRouter } from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { requireAuth } from './middleware/auth';
 import config from '@codera/config';
@@ -40,6 +40,8 @@ app.use('/submissions', submissionRouter);
 app.use('/problems', problemRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/rooms', requireAuth, roomRouter);
+app.use('/api/snippets', snippetRouter);
+app.use('/api/ai', aiRouter);
 
 // ── 404 ──
 app.use((_req, res) => {

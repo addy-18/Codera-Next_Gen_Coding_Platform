@@ -1,4 +1,4 @@
-import { Terminal, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Terminal, CheckCircle2, AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -7,9 +7,10 @@ interface OutputPanelProps {
   verdict: string | null;
   isRunning: boolean;
   scrollRef: React.RefObject<HTMLDivElement | null>;
+  onAskAI?: () => void;
 }
 
-export function OutputPanel({ output, verdict, isRunning, scrollRef }: OutputPanelProps) {
+export function OutputPanel({ output, verdict, isRunning, scrollRef, onAskAI }: OutputPanelProps) {
   return (
     <div className="flex flex-col h-full bg-base border-l border-white/5">
       <div className="h-10 border-b border-border flex items-center px-4 bg-elevated/30 shrink-0 justify-between">
@@ -60,14 +61,27 @@ export function OutputPanel({ output, verdict, isRunning, scrollRef }: OutputPan
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={clsx(
-              "mt-4 p-4 rounded-xl border flex items-center gap-3 shadow-soft",
-              verdict === 'AC' ? "bg-success/10 border-success/30 text-success" : "bg-danger/10 border-danger/30 text-danger"
-            )}
+            className="mt-4 flex flex-col gap-3"
           >
-            {verdict === 'AC' ? <CheckCircle2 className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
-            <div>
-              <p className="font-bold tracking-wide">Final Verdict: {verdict}</p>
+            <div className={clsx(
+                "p-4 rounded-xl border flex items-center justify-between shadow-soft",
+                verdict === 'AC' ? "bg-success/10 border-success/30 text-success" : "bg-danger/10 border-danger/30 text-danger"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                {verdict === 'AC' ? <CheckCircle2 className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
+                <p className="font-bold tracking-wide">Final Verdict: {verdict}</p>
+              </div>
+
+              {onAskAI && (
+                <button
+                  onClick={onAskAI}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-sans font-semibold transition-all hover:scale-105 active:scale-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-accent" />
+                  Ask AI
+                </button>
+              )}
             </div>
           </motion.div>
         )}

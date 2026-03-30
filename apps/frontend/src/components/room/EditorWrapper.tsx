@@ -38,7 +38,7 @@ export function EditorWrapper({ content, languageId, canEdit, onChange, onLangua
 
   useEffect(() => {
     if (!editorRef.current || !decorationsRef.current || !monacoRef.current) return;
-    
+
     const newDecorations = Object.entries(remoteCursors).map(([userId, cursor]) => {
       return {
         range: new monacoRef.current.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),
@@ -57,7 +57,7 @@ export function EditorWrapper({ content, languageId, canEdit, onChange, onLangua
   }, [remoteCursors]);
 
   return (
-    <div className="flex-1 flex flex-col relative bg-base" style={{ minHeight: 0 }}>
+    <div className="flex-1 flex flex-col relative bg-base min-w-0" style={{ minHeight: 0 }}>
       <style>
         {Object.entries(remoteCursors).map(([userId, cursor]) => `
           .remote-caret-${userId} {
@@ -90,7 +90,7 @@ export function EditorWrapper({ content, languageId, canEdit, onChange, onLangua
           }
         `).join('\n')}
       </style>
-      
+
       {/* Editor Header / Language Selector */}
       <div className="h-10 bg-surface border-b border-border flex items-center px-4 shrink-0 justify-between">
         <select
@@ -103,11 +103,11 @@ export function EditorWrapper({ content, languageId, canEdit, onChange, onLangua
             <option key={lang.id} value={lang.id}>{lang.name}</option>
           ))}
         </select>
-        
+
         {/* Editor Tabs or file name */}
         <div className="flex items-center">
           <div className="px-4 py-1.5 bg-elevated border-t-2 border-primary text-xs font-mono text-text-main rounded-t-sm">
-             main.{selectedLang?.monaco === 'python' ? 'py' : selectedLang?.monaco === 'cpp' ? 'cpp' : selectedLang?.monaco === 'java' ? 'java' : 'js'}
+            main.{selectedLang?.monaco === 'python' ? 'py' : selectedLang?.monaco === 'cpp' ? 'cpp' : selectedLang?.monaco === 'java' ? 'java' : 'js'}
           </div>
         </div>
       </div>
@@ -144,9 +144,9 @@ export function EditorWrapper({ content, languageId, canEdit, onChange, onLangua
         {/* Read-only badge (no blur — content stays fully visible) */}
         <AnimatePresence>
           {!canEdit && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }} 
-              animate={{ opacity: 1, y: 0 }} 
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
             >

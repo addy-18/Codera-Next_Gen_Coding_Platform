@@ -16,6 +16,58 @@
   --color-text-secondary: #e0d4ec;
   --color-border: rgba(154, 134, 168, 0.25);
   
+  /* New Terminal Dashboard Theme Variables */
+  --color-error: #ff6e84;
+  --color-primary-dim: #a88bff;
+  --color-on-secondary: #534f65;
+  --color-secondary-container: #484459;
+  --color-on-background: #f3effc;
+  --color-inverse-on-surface: #56545f;
+  --color-secondary-fixed-dim: #d7d1eb;
+  --color-outline: #777480;
+  --color-inverse-primary: #6945c7;
+  --color-on-surface-variant: #ada9b6;
+  --color-tertiary-dim: #ead64a;
+  --color-on-primary-fixed: #000000;
+  --color-tertiary-fixed: #f9e457;
+  --color-on-secondary-fixed-variant: #5d596f;
+  --color-primary-container: #ab8eff;
+  --color-tertiary-container: #f9e457;
+  --color-primary: #b79fff;
+  --color-tertiary: #fff2ab;
+  --color-outline-variant: #484751;
+  --color-on-secondary-container: #d3cde7;
+  --color-primary-fixed: #ab8eff;
+  --color-on-secondary-fixed: #403d51;
+  --color-background: #0e0d16;
+  --color-on-error-container: #ffb2b9;
+  --color-surface-bright: #2c2a39;
+  --color-on-tertiary: #665a00;
+  --color-surface-container: #1a1823;
+  --color-on-surface: #f3effc;
+  --color-secondary: #e6dffa;
+  --color-surface-tint: #b79fff;
+  --color-error-container: #a70138;
+  --color-secondary-dim: #d7d1eb;
+  --color-error-dim: #d73357;
+  --color-on-error: #490013;
+  --color-surface-container-lowest: #000000;
+  --color-surface: #0e0d16;
+  --color-primary-fixed-dim: #9f7dff;
+  --color-on-primary-container: #290070;
+  --color-surface-variant: #262431;
+  --color-surface-container-highest: #262431;
+  --color-on-primary-fixed-variant: #340089;
+  --color-on-primary: #36008f;
+  --color-on-tertiary-container: #5d5200;
+  --color-surface-dim: #0e0d16;
+  --color-secondary-fixed: #e6dffa;
+  --color-on-tertiary-fixed: #484000;
+  --color-inverse-surface: #fcf8ff;
+
+  --font-headline: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Manrope", sans-serif;
   --radius-card: 12px;
   --radius-button: 6px;
 

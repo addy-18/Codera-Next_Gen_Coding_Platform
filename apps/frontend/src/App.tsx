@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { Home } from './pages/Home';
 import { Workspace } from './pages/Workspace';
 import { Login } from './pages/Login';
+import { Dashboard } from './pages/Dashboard';
+import { SnippetsPage } from './components/snippet/page';
 import { Loader2 } from 'lucide-react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -25,6 +27,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Home />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/snippets" element={<ProtectedRoute><SnippetsPage /></ProtectedRoute>} />
       <Route path="/problems/:id" element={<Workspace mode="solo" />} />
       <Route
         path="/room/:roomId"

@@ -84,3 +84,17 @@ model Room {
   @@map("rooms")
 }
 
+model Snippet {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String
+  code      String
+  language  String   @default("cpp")
+  tags      String[] @default([])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("snippets")
+}
