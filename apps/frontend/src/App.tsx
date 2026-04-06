@@ -4,6 +4,7 @@ import { Home } from './pages/Home';
 import { Workspace } from './pages/Workspace';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { UserDashboard } from './pages/UserDashboard';
 import { SnippetsPage } from './components/snippet/page';
 import { Loader2 } from 'lucide-react';
 
@@ -28,6 +29,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Home />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/analytics" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
       <Route path="/snippets" element={<ProtectedRoute><SnippetsPage /></ProtectedRoute>} />
       <Route path="/problems/:id" element={<Workspace mode="solo" />} />
       <Route

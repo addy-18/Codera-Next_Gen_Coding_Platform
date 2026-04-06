@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq';
+import { Worker, Queue } from 'bullmq';
 import fs from 'fs';
 import path from 'path';
 import config from '@codera/config';
@@ -21,6 +21,7 @@ function parseRedisUrl(url: string) {
 }
 
 const connection = parseRedisUrl(config.redisUrl);
+const analyticsQueue = new Queue('analytics-update', { connection });
 
 // Polling constants
 const POLL_INTERVAL_MS = 1500;   // Check every 1.5 seconds
@@ -247,6 +248,18 @@ export function startWorker(): void {
                 console.log(
                   `[Worker] FINAL VERDICT for ${submissionId}: ${final_.verdict} (${final_.passedTests}/${final_.totalTests})`
                 );
+
+                // Publish to analytics queue for aggregation
+                const submissionObj = await prisma.submission.findUnique({
+                  where: { id: submissionId },
+                });
+                if (submissionObj) {
+                  await analyticsQueue.add('update', { 
+                    submissionId,
+                    userId: submissionObj.userId,
+                    problemId: submissionObj.problemId 
+                  });
+                }
 
                 finalized = true;
                 break; // Stop iterating remaining tokens — all done

@@ -62,6 +62,9 @@ async function start() {
     // Initialize ShareDB before starting the server
     await initShareDB();
 
+    // Start background background queues locally in Dev/Prod (in scalable envs, we could extract this)
+    import('./modules/analytics/analytics.worker').then(({ startAnalyticsWorker }) => startAnalyticsWorker());
+
     server.listen(config.port, () => {
       console.log(`
 ╔══════════════════════════════════════════════════════════╗

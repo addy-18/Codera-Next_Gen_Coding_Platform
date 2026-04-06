@@ -54,7 +54,7 @@ export function Dashboard() {
             <span className="font-headline tracking-tight">Contest</span>
           </a>
           {/* Analytics Tab */}
-          <a className="flex items-center gap-3 px-4 py-3 text-[#f3effc]/60 hover:text-[#f3effc] transition-colors duration-200 hover:bg-[#2c2a39]" href="#">
+          <a onClick={() => navigate('/analytics')} className="flex items-center gap-3 px-4 py-3 text-[#f3effc]/60 hover:text-[#f3effc] transition-colors duration-200 hover:bg-[#2c2a39] cursor-pointer">
             <span className="material-symbols-outlined" data-icon="monitoring">monitoring</span>
             <span className="font-headline tracking-tight">Analytics</span>
           </a>
@@ -110,55 +110,20 @@ export function Dashboard() {
 
             <section>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-primary group hover:bg-surface-container transition-all cursor-pointer">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="material-symbols-outlined text-primary text-3xl" data-icon="calendar_today">calendar_today</span>
-                    <span className="text-[10px] font-label font-bold bg-primary/10 text-primary px-2 py-1 rounded uppercase tracking-tighter">Active</span>
+                <div onClick={() => navigate('/analytics')} className="bg-gradient-to-br from-surface-container-low to-primary/5 p-8 rounded-xl border border-primary/20 group hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden flex items-center justify-between">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-colors"></div>
+                  <div>
+                    <h3 className="font-headline font-bold text-2xl leading-tight mb-2 flex items-center gap-2">
+                       <span className="material-symbols-outlined text-primary">monitoring</span>
+                       Performance Analytics
+                    </h3>
+                    <p className="text-on-surface-variant font-body mb-4">Track execution speed, analyze complexity, and visualize your progress.</p>
+                    <button className="text-[12px] font-label font-bold bg-primary/10 text-primary px-4 py-2 rounded uppercase tracking-tighter hover:bg-primary/20 transition-colors">
+                      View Detailed Dashboard
+                    </button>
                   </div>
-                  <h3 className="font-headline font-bold text-lg leading-tight mb-2">30 Days Coding Challenge</h3>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-[10px] font-label text-on-surface-variant mb-1 uppercase tracking-wider">
-                      <span>Progress</span>
-                      <span>18/30 Days</span>
-                    </div>
-                    <div className="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-primary h-full w-[60%] rounded-full shadow-[0_0_8px_rgba(183,159,255,0.6)]"></div>
-                    </div>
-                  </div>
-                </div>
-                {/*// Card 2
-                <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-tertiary group hover:bg-surface-container transition-all cursor-pointer">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="material-symbols-outlined text-tertiary text-3xl" data-icon="work">work</span>
-                    <span className="text-[10px] font-label font-bold bg-tertiary/10 text-tertiary px-2 py-1 rounded uppercase tracking-tighter">Popular</span>
-                  </div>
-                  <h3 className="font-headline font-bold text-lg leading-tight mb-2">Top Interview Questions</h3>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-[10px] font-label text-on-surface-variant mb-1 uppercase tracking-wider">
-                      <span>Completed</span>
-                      <span>84/150</span>
-                    </div>
-                    <div className="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-tertiary h-full w-[56%] rounded-full shadow-[0_0_8px_rgba(255,242,171,0.4)]"></div>
-                    </div>
-                  </div>
-                </div>*/}
-                {/* Card */}
-                <div className="bg-surface-container-low p-5 rounded-xl border-l-4 border-error group hover:bg-surface-container transition-all cursor-pointer">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="material-symbols-outlined text-error text-3xl" data-icon="psychology">psychology</span>
-                    <span className="text-[10px] font-label font-bold bg-error/10 text-error px-2 py-1 rounded uppercase tracking-tighter">Mastery</span>
-                  </div>
-                  <h3 className="font-headline font-bold text-lg leading-tight mb-2">Dynamic Programming</h3>
-                  <div className="mt-4">
-                    <div className="flex justify-between text-[10px] font-label text-on-surface-variant mb-1 uppercase tracking-wider">
-                      <span>Proficiency</span>
-                      <span>42%</span>
-                    </div>
-                    <div className="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-error h-full w-[42%] rounded-full shadow-[0_0_8px_rgba(255,110,132,0.4)]"></div>
-                    </div>
+                  <div className="hidden lg:block material-symbols-outlined text-6xl text-primary/20 group-hover:text-primary transition-colors group-hover:pr-4">
+                    arrow_forward
                   </div>
                 </div>
               </div>
@@ -228,78 +193,7 @@ export function Dashboard() {
                 </div>
               </div>
             </section>
-          </div>
-
-          {/* Right Column: Analytics & Stats */}
-          <div className="w-full lg:w-80 space-y-8">
-            {/* Progress Circle Card */}
-            <div className="bg-surface-container-low p-6 rounded-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/10 transition-colors"></div>
-              <h3 className="font-headline font-bold text-sm mb-6 uppercase tracking-widest text-on-surface-variant">Overall Progress</h3>
-              <div className="flex flex-col items-center">
-                <div className="relative w-40 h-40">
-                  {/* SVG Progress Ring */}
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle className="text-surface-container-highest" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" strokeWidth="8"></circle>
-                    <circle className="text-primary shadow-glow" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" strokeDasharray="440" strokeDashoffset="380" strokeWidth="8"></circle>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-headline font-bold">24</span>
-                    <span className="text-[10px] text-on-surface-variant uppercase tracking-tighter">Solved</span>
-                  </div>
-                </div>
-                <div className="mt-6 w-full space-y-3">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-primary font-bold">Easy</span>
-                    <span className="text-on-surface">1 / {easyCount}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-tertiary font-bold">Med.</span>
-                    <span className="text-on-surface">1 / {mediumCount}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-error font-bold">Hard</span>
-                    <span className="text-on-surface">0 / {hardCount}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Daily Heatmap Tracker */}
-            <div className="bg-surface-container-low p-6 rounded-xl">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-headline font-bold text-sm uppercase tracking-widest text-on-surface-variant">Activity Heatmap</h3>
-                <div className="flex items-center gap-1 text-primary">
-                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
-                  <span className="text-xs font-bold font-headline">12 Day Streak</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-7 gap-1.5">
-                {/* Simplified Heatmap Mock */}
-                {[...Array(28)].map((_, i) => {
-                  const val = [0, 20, 40, 60, 80, 100][Math.floor(Math.random() * 6)];
-                  const bgClass = val === 0 ? 'bg-surface-container-highest' :
-                    val === 20 ? 'bg-primary/20' :
-                      val === 40 ? 'bg-primary/40' :
-                        val === 60 ? 'bg-primary/60' :
-                          val === 80 ? 'bg-primary/80' :
-                            'bg-primary shadow-[0_0_5px_rgba(183,159,255,0.4)]';
-                  return <div key={i} className={`aspect-square rounded-sm ${bgClass}`}></div>;
-                })}
-              </div>
-              <div className="mt-4 flex justify-between text-[8px] font-label text-on-surface-variant uppercase tracking-widest">
-                <span>Less</span>
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-surface-container-highest rounded-sm"></div>
-                  <div className="w-2 h-2 bg-primary/20 rounded-sm"></div>
-                  <div className="w-2 h-2 bg-primary/40 rounded-sm"></div>
-                  <div className="w-2 h-2 bg-primary/60 rounded-sm"></div>
-                  <div className="w-2 h-2 bg-primary rounded-sm"></div>
-                </div>
-                <span>More</span>
-              </div>
-            </div>
-          </div>
+          {/* We removed the Right Column because detailed analytics are now housed safely on the UserDashboard */}
         </main>
       </div>
 

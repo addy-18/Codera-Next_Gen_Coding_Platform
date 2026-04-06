@@ -98,3 +98,46 @@ model Snippet {
   @@index([createdAt(sort: Desc)])
   @@map("snippets")
 }
+
+model UserAnalytics {
+  userId               String   @id @map("user_id")
+  totalSubmissions     Int      @default(0) @map("total_submissions")
+  acceptedSubmissions  Int      @default(0) @map("accepted_submissions")
+  acceptanceRate       Float    @default(0) @map("acceptance_rate")
+  avgRuntime           Float    @default(0) @map("avg_runtime")
+  avgMemory            Float    @default(0) @map("avg_memory")
+  fastestRuntime       Float    @default(9999999) @map("fastest_runtime")
+  bestMemory           Float    @default(9999999) @map("best_memory")
+  problemsSolved       Int      @default(0) @map("problems_solved")
+  easySolved           Int      @default(0) @map("easy_solved")
+  mediumSolved         Int      @default(0) @map("medium_solved")
+  hardSolved           Int      @default(0) @map("hard_solved")
+  streak               Int      @default(0)
+  lastActiveDate       DateTime? @map("last_active_date")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("user_analytics")
+}
+
+model ProblemAnalytics {
+  id                   String   @id @default(uuid())
+  problemId            String   @unique @map("problem_id")
+  totalAttempts        Int      @default(0) @map("total_attempts")
+  successRate          Float    @default(0) @map("success_rate")
+  avgRuntime           Float    @default(0) @map("avg_runtime")
+  avgMemory            Float    @default(0) @map("avg_memory")
+
+  @@map("problem_analytics")
+}
+
+model DailyActivity {
+  id                   String   @id @default(uuid())
+  userId               String   @map("user_id")
+  date                 String
+  submissionsCount     Int      @default(0) @map("submissions_count")
+  acceptedCount        Int      @default(0) @map("accepted_count")
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("daily_activities")
+}

@@ -1,14 +1,17 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export class AIService {
-  private genAI: GoogleGenerativeAI;
+  private genAI: GoogleGenerativeAI | null = null;
   
-  constructor() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.warn('[AIService] GEMINI_API_KEY is missing. AI features will fail.');
+  private getClient(): GoogleGenerativeAI {
+    if (!this.genAI) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === 'missing-key') {
+        console.warn('[AIService] GEMINI_API_KEY is missing. AI features will fail.');
+      }
+      this.genAI = new GoogleGenerativeAI(apiKey || 'missing-key');
     }
-    this.genAI = new GoogleGenerativeAI(apiKey || 'missing-key');
+    return this.genAI;
   }
 
   async getFeedback(
@@ -18,7 +21,7 @@ export class AIService {
     language: string,
     verdict: string
   ): Promise<string> {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = this.getClient().getGenerativeModel({ model: 'gemini-2.5-flash' });
     
     // Construct the prompt acting like an interviewer providing structural feedback
     const prompt = `You are an expert technical interviewer and programming mentor. Your goal is to help the candidate improve their code by providing **structural feedback, hints, and best practice suggestions**. 
@@ -56,7 +59,7 @@ Keep your response extremely concise, encouraging, and formatted in Markdown.
       return result.response.text();
     } catch (err: any) {
       console.error('[AIService] Error calling Gemini API:', err.message);
-      throw new Error('Failed to generate AI feedback. Please ensure GEMINI_API_KEY is set in backend .env');
+      throw new Error('Failed to generate AI feedback. Please ensure GEMINI_API_KEY is properly set in backend .env');
     }
   }
 }
