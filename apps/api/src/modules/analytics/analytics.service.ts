@@ -1,16 +1,17 @@
 import prisma from '@codera/db';
-import { Redis } from 'ioredis';
-import config from '@codera/config';
-
-// Connect to Redis for caching
-const redis = new Redis(config.redisUrl);
+import { redis } from '../../loaders/redis';
 
 export class AnalyticsService {
   /** Retrieves a user's pre-computed analytics profile from the database. */
   async getUserAnalytics(userId: string) {
-    const cached = await redis.get(`analytics:user:${userId}`);
-    if (cached) {
-      return JSON.parse(cached);
+    // Try cache first — but don't let Redis errors block the response
+    try {
+      const cached = await redis.get(`analytics:user:${userId}`);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (cacheErr) {
+      console.warn('[AnalyticsService] Redis cache read failed, falling through to DB:', (cacheErr as Error).message);
     }
 
     const analytics = await prisma.userAnalytics.findUnique({
@@ -33,6 +34,7 @@ export class AnalyticsService {
         mediumSolved: 0,
         hardSolved: 0,
         streak: 0,
+        difficultyBreakdown: { easy: 0, medium: 0, hard: 0 },
       };
     }
 
@@ -43,17 +45,27 @@ export class AnalyticsService {
     };
 
     const response = { ...analytics, difficultyBreakdown };
-    
-    // Cache the response for 1 hour
-    await redis.set(`analytics:user:${userId}`, JSON.stringify(response), 'EX', 3600);
+
+    // Cache the response for 1 hour — best-effort, don't fail if Redis is down
+    try {
+      await redis.set(`analytics:user:${userId}`, JSON.stringify(response), 'EX', 3600);
+    } catch (cacheErr) {
+      console.warn('[AnalyticsService] Redis cache write failed:', (cacheErr as Error).message);
+    }
+
     return response;
   }
 
   /** Gets an array of submissions aggregated by day. */
   async getSubmissionTrends(userId: string, rangeDays: number = 30) {
-    const cached = await redis.get(`analytics:trends:${userId}:${rangeDays}`);
-    if (cached) {
-      return JSON.parse(cached);
+    // Try cache first
+    try {
+      const cached = await redis.get(`analytics:trends:${userId}:${rangeDays}`);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (cacheErr) {
+      console.warn('[AnalyticsService] Redis trends cache read failed:', (cacheErr as Error).message);
     }
 
     const dateThreshold = new Date();
@@ -62,8 +74,6 @@ export class AnalyticsService {
     const trends = await prisma.dailyActivity.findMany({
       where: {
         userId,
-        // Since `date` is a string like "2024-03-24", doing a string comparison
-        // correctly filters YYYY-MM-DD. We format our threshold correctly:
         date: {
           gte: dateThreshold.toISOString().split('T')[0],
         },
@@ -71,15 +81,18 @@ export class AnalyticsService {
       orderBy: { date: 'asc' },
     });
 
-    await redis.set(`analytics:trends:${userId}:${rangeDays}`, JSON.stringify(trends), 'EX', 3600);
+    // Cache best-effort
+    try {
+      await redis.set(`analytics:trends:${userId}:${rangeDays}`, JSON.stringify(trends), 'EX', 3600);
+    } catch (cacheErr) {
+      console.warn('[AnalyticsService] Redis trends cache write failed:', (cacheErr as Error).message);
+    }
+
     return trends;
   }
 
   /** Gets aggregated problem statuses for this user for detailed graphs */
   async getProblemWiseStats(userId: string) {
-    // Return all submissions uniquely identifying the best runtimes.
-    // Instead of querying `ProblemAnalytics` (which is global), we extract the user's specific attempts
-    // from the `Submission` table itself for table display.
     const submissions = await prisma.submission.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -89,17 +102,21 @@ export class AnalyticsService {
         status: true,
         verdict: true,
         createdAt: true,
-      }
+      },
     });
 
     return submissions;
   }
 
-  /** Invalidates cache for a user natively */
+  /** Invalidates cache for a user */
   async invalidateUserCache(userId: string) {
-    const keys = await redis.keys(`analytics:*:${userId}*`);
-    if (keys.length > 0) {
-      await redis.del(...keys);
+    try {
+      const keys = await redis.keys(`analytics:*:${userId}*`);
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+    } catch (err) {
+      console.warn('[AnalyticsService] Cache invalidation failed:', (err as Error).message);
     }
   }
 }

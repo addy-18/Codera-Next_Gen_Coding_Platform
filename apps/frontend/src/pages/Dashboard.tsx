@@ -16,9 +16,9 @@ export function Dashboard() {
   }, []);
 
   // Quick stats derived from problem length (Mocked for visual parity)
-  const easyCount = problems.filter(p => p.difficulty === 'Easy').length;
-  const mediumCount = problems.filter(p => p.difficulty === 'Medium').length;
-  const hardCount = problems.filter(p => p.difficulty === 'Hard').length;
+  // const easyCount = problems.filter(p => p.difficulty === 'Easy').length;
+  // const mediumCount = problems.filter(p => p.difficulty === 'Medium').length;
+  // const hardCount = problems.filter(p => p.difficulty === 'Hard').length;
   const totalCount = problems.length;
 
   return (
@@ -114,8 +114,8 @@ export function Dashboard() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-colors"></div>
                   <div>
                     <h3 className="font-headline font-bold text-2xl leading-tight mb-2 flex items-center gap-2">
-                       <span className="material-symbols-outlined text-primary">monitoring</span>
-                       Performance Analytics
+                      <span className="material-symbols-outlined text-primary">monitoring</span>
+                      Performance Analytics
                     </h3>
                     <p className="text-on-surface-variant font-body mb-4">Track execution speed, analyze complexity, and visualize your progress.</p>
                     <button className="text-[12px] font-label font-bold bg-primary/10 text-primary px-4 py-2 rounded uppercase tracking-tighter hover:bg-primary/20 transition-colors">
@@ -193,6 +193,7 @@ export function Dashboard() {
                 </div>
               </div>
             </section>
+          </div>
           {/* We removed the Right Column because detailed analytics are now housed safely on the UserDashboard */}
         </main>
       </div>
